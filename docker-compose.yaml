@@ -1,0 +1,9 @@
+services:
+  fastapi-ocr:
+    build: .
+    container_name: fastapi_ocr
+    environment:
+      RUN_PORT: 8000
+    ports:
+      - '8000:8000'
+    restart: unless-stopped
