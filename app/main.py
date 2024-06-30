@@ -9,7 +9,8 @@ BASE_DIR = pathlib.Path(__file__).parent
 app = FastAPI()
 
 
-templates = Jinja2Templates(directory=str(BASE_DIR / 'templates'))
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
 
 @app.get("/", response_class=HTMLResponse)
 def home_view(request: Request):
