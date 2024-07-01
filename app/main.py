@@ -1,20 +1,24 @@
 import pathlib
-from fastapi import FastAPI, Request, status
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from typing import Annotated
 
+from fastapi import Depends, FastAPI, Request, status
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from . import config
+from .config import templates
 
 BASE_DIR = pathlib.Path(__file__).parent
 
 app = FastAPI()
 
 
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+setting_deps = Annotated[config.Settings, Depends(config.get_settings)]
 
 
 @app.get("/", response_class=HTMLResponse)
-def home_view(request: Request):
-    # return {"message": "Welcome to the FastAPI application!"}
+def home_view(request: Request, settings: setting_deps):
     return templates.TemplateResponse("home.html", context={"request": request})
 
 
