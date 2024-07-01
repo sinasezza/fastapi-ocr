@@ -64,7 +64,7 @@ async def prediction_view(
     authorization=Header(None),
 ):
     # auth
-    verify_auth(settings, authorization)
+    # verify_auth(settings, authorization)
 
     if not settings.echo_active:
         raise HTTPException(
