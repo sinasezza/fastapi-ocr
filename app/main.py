@@ -4,7 +4,16 @@ import uuid
 from typing import Annotated
 
 import pytesseract
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Header,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse, HTMLResponse
 from PIL import Image
 
@@ -24,11 +33,39 @@ def home_view(request: Request, settings: setting_deps):
     return templates.TemplateResponse("home.html", context={"request": request})
 
 
+def verify_auth(settings: setting_deps, authorization=Header(None)):
+    """auth
+    Authorization: Bearer <token>
+    {"authorization": "Bearer <token>"}
+    """
+    if settings.debug and settings.skip_auth:
+        return
+
+    if authorization is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication is required",
+        )
+
+    print(authorization)
+
+    label, token = authorization.split(" ")
+    if label != "Bearer" or token != settings.app_auth_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
+
+
 @app.post("/")
 async def prediction_view(
     file: Annotated[UploadFile, File(...)],
     settings: Annotated[config.Settings, Depends(config.get_settings)],
+    authorization=Header(None),
 ):
+    # auth
+    verify_auth(settings, authorization)
+
     if not settings.echo_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Echo feature is not active"

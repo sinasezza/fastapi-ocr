@@ -14,6 +14,8 @@ load_dotenv(dotenv_path=BASE_DIR / ".env")
 class Settings(BaseSettings):
     debug: bool = Field(default=False)
     echo_active: bool = False
+    app_auth_token: str
+    skip_auth: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
