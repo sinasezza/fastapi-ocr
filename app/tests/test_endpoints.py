@@ -6,7 +6,7 @@ from fastapi import Request, Response, status
 from fastapi.testclient import TestClient
 from PIL import Image, ImageChops
 
-from ..config import BASE_DIR, UPLOAD_DIR
+from ..config import BASE_DIR, MAX_FILE_SIZE, UPLOAD_DIR
 from ..main import app
 
 client = TestClient(app)
@@ -17,14 +17,6 @@ def test_get_home():
 
     assert response.status_code == status.HTTP_200_OK
     assert "text/html" in response.headers["Content-Type"]
-
-
-def test_post_home():
-    response: Response = client.post("/")
-
-    assert response.status_code == status.HTTP_200_OK
-    assert "application/json" in response.headers["Content-Type"]
-    assert response.json() == {"message": "Welcome to the FastAPI application! POST"}
 
 
 valid_image_extensions = ("jpg", "jpeg", "png", "gif")
@@ -75,3 +67,33 @@ def test_img_echo():
 
     time.sleep(3)
     shutil.rmtree(UPLOAD_DIR, ignore_errors=True)
+
+
+def test_prediction_view():
+    img_saved_path = BASE_DIR / "test_images"
+
+    # Ensure the image directory exists
+    assert img_saved_path.exists(), "Image directory does not exist"
+
+    for path in img_saved_path.glob("*"):
+        if path.suffix[1:].lower() not in valid_image_extensions:
+            continue  # Skip non-image files
+
+        with open(path, "rb") as file:
+            response = client.post(
+                "/",
+                files={"file": (path.name, file, f"image/{path.suffix[1:].lower()}")},
+            )
+
+        if response.status_code == status.HTTP_200_OK:
+            response_data = response.json()
+            assert (
+                "text" in response_data
+            ), f"Response data missing 'text' key for file: {path}"
+            assert isinstance(
+                response_data["text"], list
+            ), f"Response 'text' is not a list for file: {path}"
+        else:
+            pytest.fail(
+                f"Failed to upload file {path}, status code: {response.status_code}"
+            )
